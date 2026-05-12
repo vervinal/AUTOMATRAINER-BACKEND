@@ -123,3 +123,4 @@ async def create_workout(req: WorkoutRequest):
         if r.status_code not in [200, 201]:
             raise HTTPException(status_code=r.status_code, detail=r.text)
         return r.json()
+
