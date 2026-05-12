@@ -2,9 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-import httpx, os
+import httpx, os, logging
 from typing import Optional
 from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AUTOMATRAINER API")
 
@@ -25,7 +28,7 @@ SYSTEM_PROMPT = """Eres el entrenador elite de ciclismo de Alex.
 - Objetivo: Nacionales CRI + Ruta 25-26 julio 2026. Departamentales 28-29 junio 2026.
 - Zonas ruta: Z2 125-145lpm/177-236w | Z4 155-164lpm/265-295w | Z7 >413w
 - Zonas CRI (275w): Z4 155-163lpm/247-280w
-- Semana 6 activa. Pico sprint 1032w ruta / 879w CRI. FCRec 34. W' 25.8kJ. Desacopl mejor -22.2%.
+- Semana 6 activa. Pico sprint 1032w ruta / 879w CRI. FCRec 34. W' 25.8kJ.
 - Sé directo, técnico y motivador. Responde en español. Máximo 150 palabras."""
 
 class ChatRequest(BaseModel):
@@ -37,12 +40,18 @@ async def serve_app():
     try:
         with open("static.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    except:
-        return HTMLResponse(content="<h1>AUTOMATRAINER</h1><p>static.html not found</p>")
+    except Exception as e:
+        return HTMLResponse(content=f"<h1>Error: {e}</h1>")
 
 @app.get("/health")
 def health():
-    return {"status": "AUTOMATRAINER API running", "version": "2.0"}
+    return {
+        "status": "running",
+        "version": "2.1",
+        "anthropic_key": "set" if ANTHROPIC_KEY else "MISSING",
+        "intervals_key": "set" if INTERVALS_KEY else "MISSING",
+        "athlete_id": ATHLETE_ID or "MISSING"
+    }
 
 @app.get("/fitness")
 async def get_fitness():
@@ -59,27 +68,20 @@ async def get_fitness():
             raise HTTPException(status_code=r.status_code, detail=r.text)
         return r.json()
 
-@app.get("/activities")
-async def get_activities(days: int = 3):
-    today = datetime.now()
-    oldest = (today - timedelta(days=days)).strftime("%Y-%m-%d")
-    newest = today.strftime("%Y-%m-%d")
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.get(
-            f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/activities",
-            auth=("API_KEY", INTERVALS_KEY),
-            params={"oldest": oldest, "newest": newest}
-        )
-        if r.status_code != 200:
-            raise HTTPException(status_code=r.status_code, detail=r.text)
-        data = r.json()
-        if isinstance(data, list) and len(data) > 0:
-            return data[-1]
-        return data
-
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    messages = req.history + [{"role": "user", "content": req.message}]
+    # Solo el mensaje actual — sin historia para evitar errores de formato
+    messages = [{"role": "user", "content": req.message}]
+    
+    payload = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1000,
+        "system": SYSTEM_PROMPT,
+        "messages": messages
+    }
+    
+    logger.info(f"Sending to Anthropic: model={payload['model']}, msg_len={len(req.message)}")
+    
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
             "https://api.anthropic.com/v1/messages",
@@ -88,13 +90,15 @@ async def chat(req: ChatRequest):
                 "anthropic-version": "2023-06-01",
                 "content-type": "application/json"
             },
-            json={
-                "model": "claude-sonnet-4-6",
-                "max_tokens": 1000,
-                "system": SYSTEM_PROMPT,
-                "messages": messages
-            }
+            json=payload
         )
+        
+        logger.info(f"Anthropic response: {r.status_code} - {r.text[:200]}")
+        
         if r.status_code != 200:
-            raise HTTPException(status_code=r.status_code, detail=r.text)
+            raise HTTPException(
+                status_code=r.status_code,
+                detail=f"Anthropic error: {r.text[:500]}"
+            )
+        
         return {"reply": r.json()["content"][0]["text"]}
