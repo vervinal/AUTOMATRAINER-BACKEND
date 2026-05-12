@@ -5,24 +5,24 @@ from pydantic import BaseModel
 import httpx, os, logging
 from typing import Optional
 from datetime import datetime, timedelta
-
+ 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+ 
 app = FastAPI(title="AUTOMATRAINER API")
-
+ 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+ 
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 INTERVALS_KEY = os.environ.get("INTERVALS_API_KEY", "")
 ATHLETE_ID    = os.environ.get("INTERVALS_ATHLETE_ID", "")
 INTERVALS_URL = "https://intervals.icu/api/v1"
-
+ 
 SYSTEM_PROMPT = """Eres el entrenador elite de ciclismo de Alex.
 - 50 años, 80kg, FTP 295w ruta / 275w CRI, FCmáx 182lpm
 - Objetivo: Nacionales CRI + Ruta 25-26 julio 2026. Departamentales 28-29 junio 2026.
@@ -30,11 +30,11 @@ SYSTEM_PROMPT = """Eres el entrenador elite de ciclismo de Alex.
 - Zonas CRI (275w): Z4 155-163lpm/247-280w
 - Semana 6 activa. Pico sprint 1032w ruta / 879w CRI. FCRec 34. W' 25.8kJ.
 - Sé directo, técnico y motivador. Responde en español. Máximo 150 palabras."""
-
+ 
 class ChatRequest(BaseModel):
     message: str
     history: Optional[list] = []
-
+ 
 @app.get("/", response_class=HTMLResponse)
 async def serve_app():
     try:
@@ -42,17 +42,17 @@ async def serve_app():
             return HTMLResponse(content=f.read())
     except Exception as e:
         return HTMLResponse(content=f"<h1>Error: {e}</h1>")
-
+ 
 @app.get("/health")
 def health():
     return {
         "status": "running",
-        "version": "2.1",
+        "version": "2.2",
         "anthropic_key": "set" if ANTHROPIC_KEY else "MISSING",
         "intervals_key": "set" if INTERVALS_KEY else "MISSING",
         "athlete_id": ATHLETE_ID or "MISSING"
     }
-
+ 
 @app.get("/fitness")
 async def get_fitness():
     today = datetime.now()
@@ -67,21 +67,16 @@ async def get_fitness():
         if r.status_code != 200:
             raise HTTPException(status_code=r.status_code, detail=r.text)
         return r.json()
-
+ 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # Solo el mensaje actual — sin historia para evitar errores de formato
     messages = [{"role": "user", "content": req.message}]
-    
     payload = {
         "model": "claude-sonnet-4-6",
         "max_tokens": 1000,
         "system": SYSTEM_PROMPT,
         "messages": messages
     }
-    
-    logger.info(f"Sending to Anthropic: model={payload['model']}, msg_len={len(req.message)}")
-    
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
             "https://api.anthropic.com/v1/messages",
@@ -92,20 +87,15 @@ async def chat(req: ChatRequest):
             },
             json=payload
         )
-        
-        logger.info(f"Anthropic response: {r.status_code} - {r.text[:200]}")
-        
         if r.status_code != 200:
             raise HTTPException(
                 status_code=r.status_code,
                 detail=f"Anthropic error: {r.text[:500]}"
             )
-        
         return {"reply": r.json()["content"][0]["text"]}
-
+ 
 @app.get("/test-chat")
 async def test_chat():
-    """Diagnóstico — llama a Anthropic y devuelve respuesta completa"""
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post(
             "https://api.anthropic.com/v1/messages",
@@ -120,7 +110,5 @@ async def test_chat():
                 "messages": [{"role": "user", "content": "Di hola"}]
             }
         )
-        return {
-            "status_code": r.status_code,
-            "response": r.json()
-        }
+        return {"status_code": r.status_code, "response": r.json()}
+ 
