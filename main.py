@@ -4,14 +4,17 @@ from pydantic import BaseModel
 import httpx
 import os
 from typing import Optional
+from datetime import datetime, timedelta
 
 app = FastAPI(title="AUTOMATRAINER API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*", "null"],
+    allow_origin_regex=".*",
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
 
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -28,9 +31,8 @@ Datos clave del atleta:
 - Zonas ruta: Z1 <125lpm/<177w | Z2 125-145lpm/177-236w | Z3 145-155lpm/236-265w | Z4 155-164lpm/265-295w | Z5 164-172lpm/295-354w | Z7 >413w
 - Zonas CRI (FTP 275w): Z4 155-163lpm/247-280w
 - Plan: 12 semanas iniciado 7 abril. Semana 6 activa.
-- Entrenamientos: Martes CRI simulador, Miércoles Z1 ruta, Jueves fuerza+gimnasio, Viernes Z2+durabilidad, Sábado Over-Unders CRI, Domingo fondo+ataques
-- Historial reciente: test FTP 295w (5 mayo), Over-Unders CRI carretera 9 mayo (desacoplamiento 0.7%), fondo+ataques 100km/752m 10 mayo
-- Pico sprint: 1032w | Desacoplamiento mejor: -22.2% | FCRec: 34
+- Historial reciente: test FTP 295w (5 mayo), Over-Unders CRI 0.7% desacopl (9 mayo), fondo+ataques 100km/752m (10 mayo), Sprints 8x 879w + Z4 3x (12 mayo)
+- Pico sprint: 1032w ruta / 879w CRI | Desacoplamiento mejor: -22.2% | FCRec: 34 | W': 25.8kJ
 - Cadencia natural: 78-85 rpm
 - Sé directo, técnico y motivador. Responde en español. Máximo 150 palabras."""
 
@@ -49,42 +51,46 @@ class WorkoutRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "AUTOMATRAINER API running", "version": "1.0"}
+    return {"status": "AUTOMATRAINER API running", "version": "1.1"}
 
 @app.get("/fitness")
 async def get_fitness():
-    async with httpx.AsyncClient() as client:
+    today = datetime.now()
+    oldest = (today - timedelta(days=3)).strftime("%Y-%m-%d")
+    newest = today.strftime("%Y-%m-%d")
+    async with httpx.AsyncClient(timeout=30) as client:
         r = await client.get(
             f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/wellness",
             auth=("API_KEY", INTERVALS_KEY),
-            params={"oldest": "2026-05-10", "newest": "2026-05-12"}
+            params={"oldest": oldest, "newest": newest}
         )
         if r.status_code != 200:
-            raise HTTPException(status_code=r.status_code, detail="Intervals error")
+            raise HTTPException(status_code=r.status_code, detail=f"Intervals: {r.text}")
         return r.json()
 
 @app.get("/activities")
-async def get_activities(days: int = 7):
-    from datetime import datetime, timedelta
-    end = datetime.now()
-    start = end - timedelta(days=days)
-    async with httpx.AsyncClient() as client:
+async def get_activities(days: int = 3):
+    today = datetime.now()
+    oldest = (today - timedelta(days=days)).strftime("%Y-%m-%d")
+    newest = today.strftime("%Y-%m-%d")
+    async with httpx.AsyncClient(timeout=30) as client:
         r = await client.get(
             f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/activities",
             auth=("API_KEY", INTERVALS_KEY),
-            params={
-                "oldest": start.strftime("%Y-%m-%dT00:00:00"),
-                "newest": end.strftime("%Y-%m-%dT23:59:59")
-            }
+            params={"oldest": oldest, "newest": newest}
         )
         if r.status_code != 200:
-            raise HTTPException(status_code=r.status_code, detail="Intervals error")
-        return r.json()
+            raise HTTPException(status_code=r.status_code, detail=f"Intervals: {r.text}")
+        data = r.json()
+        # Return last activity only
+        if isinstance(data, list) and len(data) > 0:
+            return data[-1]
+        return data
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
     messages = req.history + [{"role": "user", "content": req.message}]
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
             "https://api.anthropic.com/v1/messages",
             headers={
@@ -106,7 +112,7 @@ async def chat(req: ChatRequest):
 
 @app.post("/workout")
 async def create_workout(req: WorkoutRequest):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post(
             f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/events",
             auth=("API_KEY", INTERVALS_KEY),
