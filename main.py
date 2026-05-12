@@ -102,3 +102,25 @@ async def chat(req: ChatRequest):
             )
         
         return {"reply": r.json()["content"][0]["text"]}
+
+@app.get("/test-chat")
+async def test_chat():
+    """Diagnóstico — llama a Anthropic y devuelve respuesta completa"""
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            },
+            json={
+                "model": "claude-sonnet-4-6",
+                "max_tokens": 50,
+                "messages": [{"role": "user", "content": "Di hola"}]
+            }
+        )
+        return {
+            "status_code": r.status_code,
+            "response": r.json()
+        }
