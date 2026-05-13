@@ -320,34 +320,6 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-si
           <div class="pbg" style="margin-bottom:0"><div class="pf" style="width:75%;background:var(--warn)"></div></div>
         </div>
       </div>
-
-      <!-- LAST ACTIVITY -->
-      <div class="sec"><div class="sec-t">Último entrenamiento</div></div>
-      <div class="acard">
-        <div class="ah">
-          <div class="an" id="act-nm">Sprints 8x + Z4 — Sem 6</div>
-          <div class="ad" id="act-dt">Cargando...</div>
-        </div>
-        <div class="asts">
-          <div class="asi"><div class="v" id="act-np" style="color:var(--accent)">--w</div><div class="l">Pmed</div></div>
-          <div class="asi"><div class="v" id="act-hr" style="color:var(--accent2)">--</div><div class="l">FC</div></div>
-          <div class="asi"><div class="v" id="act-tss" style="color:var(--warn)">--</div><div class="l">TSS</div></div>
-          <div class="asi"><div class="v" id="act-mx" style="color:var(--accent3)">879w</div><div class="l">Sprint</div></div>
-        </div>
-        <div class="zbrs">
-          <div class="zb" style="width:74%;background:#2a2a2a"></div>
-          <div class="zb" style="width:13%;background:var(--accent)"></div>
-          <div class="zb" style="width:10%;background:var(--accent3)"></div>
-          <div class="zb" style="width:3%;background:var(--accent2)"></div>
-        </div>
-        <div class="zleg">
-          <div class="zi"><div class="zd" style="background:#2a2a2a"></div>Z1 74%</div>
-          <div class="zi"><div class="zd" style="background:var(--accent)"></div>Z4 13%</div>
-          <div class="zi"><div class="zd" style="background:var(--accent3)"></div>Z7 10%</div>
-          <div class="zi"><div class="zd" style="background:var(--accent2)"></div>SS 3%</div>
-        </div>
-      </div>
-
       <!-- EVENTS COUNTDOWN -->
       <div class="sec"><div class="sec-t">Countdown</div></div>
       <div class="ev">
@@ -394,23 +366,65 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-si
 
     <!-- PLAN -->
     <div class="screen" id="cal-screen">
-      <div class="hdr"><div><div class="btxt" style="font-size:18px;letter-spacing:0">Plan Mayo</div><div class="bsub">Semana 6 activa</div></div></div>
+      <!-- Header -->
+      <div class="hdr">
+        <div>
+          <div class="btxt" style="font-size:18px;letter-spacing:0" id="cal-month-title">Plan Mayo 2026</div>
+          <div class="bsub" id="cal-week-title">Semana 6 activa</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);cursor:pointer;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px" onclick="loadEvents()">↻ sync</div>
+      </div>
+
+      <!-- Calendar grid -->
       <div class="cgrid" id="cgrid"></div>
-      <div class="sec"><div class="sec-t">Esta semana</div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Mar 12 — Sprints 8x + Z4 3x</div><div class="wcm">85 min · 84 TSS · CRI</div></div><div class="badge bw">✓ Hoy</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Mié 13 — Recuperación Z1</div><div class="wcm">55 min · 26 TSS · Ruta</div></div><div class="badge br">Mañana</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Jue 14 — Fuerza + Lactato</div><div class="wcm">75 min + Gimnasio</div></div><div class="badge bw">Calidad</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Vie 15 — Z2 + Durabilidad</div><div class="wcm">~2h · ~120 TSS</div></div><div class="badge bw">Durabilidad</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Sáb 16 — Over-Unders 4x</div><div class="wcm">85 min · ~90 TSS · CRI</div></div><div class="badge bw">CRI</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">Dom 17 — Chequeo 75km</div><div class="wcm">Llegada 2km/5% · a decidir</div></div><div class="badge bc">Carrera</div></div></div>
-      <div class="sec" style="margin-top:6px"><div class="sec-t">Eventos</div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">28-29 Jun — Departamental</div><div class="wcm">CRI + Ruta · 47 días</div></div><div class="badge bc">🎯</div></div></div>
-      <div class="wcard"><div class="wch"><div><div class="wcn">25-26 Jul — Nacional</div><div class="wcm">CRI 20km + Ruta · 74 días</div></div><div class="badge bw">🏆</div></div></div>
+
+      <!-- Workout dialog -->
+      <div style="margin:0 16px 16px">
+        <div id="workout-dialog" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;transition:border-color .2s">
+
+          <!-- Dialog header -->
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px" id="dialog-date">—</div>
+              <div style="font-size:15px;font-weight:500;margin-top:2px" id="dialog-name">Toca una fecha</div>
+            </div>
+            <div id="dialog-badge" class="badge br" style="display:none">—</div>
+          </div>
+
+          <!-- Dialog stats row -->
+          <div id="dialog-stats" style="display:none;padding:10px 14px;border-bottom:1px solid var(--border);display:none;gap:16px">
+            <div style="text-align:center">
+              <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:var(--accent)" id="dialog-tss">—</div>
+              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">TSS</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:var(--accent2)" id="dialog-dur">—</div>
+              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">min</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:var(--accent3)" id="dialog-type">—</div>
+              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">tipo</div>
+            </div>
+          </div>
+
+          <!-- Dialog body - intervals -->
+          <div id="dialog-body" style="padding:14px;max-height:340px;overflow-y:auto">
+            <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">
+              Toca cualquier fecha del calendario
+            </div>
+          </div>
+
+          <!-- Ask coach button -->
+          <div id="dialog-coach-btn" style="display:none;padding:10px 14px;border-top:1px solid var(--border)">
+            <button onclick="askCoachAboutDay()" style="width:100%;background:var(--accent);border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:600;color:#0a0a0a;cursor:pointer;font-family:var(--font)">
+              🚴 Preguntar al entrenador sobre este día →
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-  </div>
-
-  <nav id="nav">
+    <nav id="nav">
     <button class="nb active" onclick="show('home')" id="n-home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Dashboard
@@ -427,7 +441,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-si
 </div>
 
 <script>
-const BACKEND = 'https://automatrainer-backend-production.up.railway.app';
+// URL dinámica — usa relativa si se sirve desde Railway, absoluta si es local
+const BACKEND = window.location.protocol === 'file:' 
+  ? 'https://automatrainer-backend-production.up.railway.app'
+  : window.location.origin;
 const today = new Date(); // Global — usado en buildCal, updateDays, etc.
 const SYS = null; // Backend maneja system prompt con datos frescos de intervals.icu
 const hist = [];
@@ -606,23 +623,123 @@ function sq(t){document.getElementById('tinput').value=t; send();}
 function hk(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function ar(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,90)+'px';}
 
-// ─── CALENDAR ─────────────────────────────────────────────
+// ─── PLAN & CALENDAR ─────────────────────────────────────
+let allEvents = [];
+let selectedDate = null;
+
+async function loadEvents() {
+  try {
+    const r = await fetch(`${BACKEND}/events?days_back=3&days_forward=60`);
+    if(!r.ok) return;
+    allEvents = await r.json();
+  } catch(e) { console.log('Events:', e.message); }
+  buildCal();
+  showEventForDate(today);
+}
+
+function getEventForDate(date) {
+  const dateStr = date.toISOString().split('T')[0];
+  return allEvents.find(ev => ev.start_date_local && ev.start_date_local.startsWith(dateStr));
+}
+
+function formatDate(date) {
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${dias[date.getDay()]} ${date.getDate()} ${meses[date.getMonth()]}`;
+}
+
+function formatIntervals(desc) {
+  if(!desc) return '<div style="color:var(--text3);font-size:13px">Sin descripción.</div>';
+  return desc.split('\n').filter(l=>l.trim()).map(line => {
+    const clean = line.replace(/^-\s*/,'').trim();
+    let color='var(--text2)', border='var(--border)';
+    if(/Z7|150%|sprint/i.test(clean)){color='var(--accent3)';border='rgba(255,107,71,.3)';}
+    else if(/Z4|9[0-9]%|umbral/i.test(clean)){color='var(--accent)';border='rgba(232,255,71,.3)';}
+    else if(/Z5|Z6|10[0-9]%|11[0-9]%/i.test(clean)){color='var(--warn)';border='rgba(255,179,71,.3)';}
+    else if(/Z3|8[0-9]%|tempo/i.test(clean)){color='var(--accent2)';border='rgba(71,255,184,.25)';}
+    return `<div style="padding:7px 10px;margin-bottom:5px;border-radius:8px;border:1px solid ${border};background:var(--bg3);font-size:12px;font-family:var(--mono);color:${color};line-height:1.4">${clean}</div>`;
+  }).join('');
+}
+
+function showEventForDate(date) {
+  selectedDate = date;
+  const ev = getEventForDate(date);
+  const dateEl = document.getElementById('dialog-date');
+  const nameEl = document.getElementById('dialog-name');
+  const bodyEl = document.getElementById('dialog-body');
+  const badgeEl = document.getElementById('dialog-badge');
+  if(dateEl) dateEl.textContent = formatDate(date);
+  const isToday = date.toDateString() === today.toDateString();
+  const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if(!ev) {
+    if(nameEl) nameEl.textContent = 'Sin entrenamiento programado';
+    if(badgeEl){badgeEl.textContent=isToday?'Hoy':isPast?'Pasado':'Libre';badgeEl.className='badge '+(isToday?'bw':isPast?'':'br');}
+    if(bodyEl) bodyEl.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0"><div style="font-size:24px;margin-bottom:8px">${isPast?'':'📅'}</div>${isPast?'Día sin entreno registrado':'No hay entreno planificado para este día.'}</div>`;
+    return;
+  }
+  if(nameEl) nameEl.textContent = ev.name||'Entrenamiento';
+  const cat = ev.category||'WORKOUT';
+  const badgeMap={WORKOUT:'bw',RACE_A:'bc',RACE_B:'bc',RACE_C:'bc',NOTE:'br'};
+  const labelMap={WORKOUT:isToday?'Hoy':'Plan',RACE_A:'🏆 Carrera A',RACE_B:'🎯 Carrera B',RACE_C:'Carrera C',NOTE:'Nota'};
+  if(badgeEl){badgeEl.className='badge '+(badgeMap[cat]||'br');badgeEl.textContent=labelMap[cat]||cat;}
+  let body='';
+  const mins=ev.moving_time?Math.round(ev.moving_time/60):null;
+  const tss=ev.load||ev.training_load;
+  if(mins||tss){
+    body+=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">`;
+    if(mins) body+=`<span style="font-size:11px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-family:var(--mono);color:var(--text2)">⏱ ${mins} min</span>`;
+    if(tss) body+=`<span style="font-size:11px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-family:var(--mono);color:var(--warn)">TSS ~${tss}</span>`;
+    if(ev.type) body+=`<span style="font-size:11px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-family:var(--mono);color:var(--text3)">${ev.type}</span>`;
+    body+=`</div>`;
+  }
+  if(ev.description){
+    body+=`<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:8px">Estructura</div>`;
+    body+=formatIntervals(ev.description);
+  } else if(cat.startsWith('RACE')){
+    body+=`<div style="color:var(--accent3);font-size:14px;text-align:center;padding:16px 0">🏁 Competencia</div>`;
+  }
+  if(bodyEl) bodyEl.innerHTML=body;
+}
+
+
+function askCoachAboutDay(){
+  if(!selectedDate) return;
+  const ev = getEventForDate(selectedDate);
+  let q;
+  if(!ev){
+    q = `No hay entreno para el ${formatDate(selectedDate)}. ¿Qué debería hacer ese día según el plan?`;
+  } else {
+    q = `Dame los parámetros detallados del entreno "${ev.name}" del ${formatDate(selectedDate)}: potencia, FC y cadencia para cada bloque.`;
+  }
+  document.getElementById('tinput').value = q;
+  show('chat');
+  send();
+}
 function buildCal(){
-  const g = document.getElementById('cgrid');
+  const g=document.getElementById('cgrid');
+  g.innerHTML='';
   ['L','M','X','J','V','S','D'].forEach(d=>{const el=document.createElement('div');el.className='cdn';el.textContent=d;g.appendChild(el);});
-  const wdays=[5,7,8,9,10,12,13,14,15,16,17,19,20,21,22,23,24,26,27,28,29];
-  const race=[17,24,28,29];
-  // Calculate offset dynamically
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
-  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const eventDates=allEvents.map(ev=>ev.start_date_local?ev.start_date_local.substring(0,10):null).filter(Boolean);
+  const raceDates=allEvents.filter(ev=>ev.category&&ev.category.startsWith('RACE')).map(ev=>ev.start_date_local?ev.start_date_local.substring(0,10):null).filter(Boolean);
+  const firstDay=new Date(today.getFullYear(),today.getMonth(),1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
   for(let blank=0;blank<offset;blank++){const el=document.createElement('div');g.appendChild(el);}
   const daysInMonth=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
   for(let i=1;i<=daysInMonth;i++){
     const el=document.createElement('div');el.className='cd';
+    const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
     if(i===today.getDate())el.classList.add('today');
-    if(wdays.includes(i))el.classList.add('hasw');
-    if(race.includes(i))el.classList.add('race');
-    el.textContent=i; g.appendChild(el);
+    if(eventDates.includes(dateStr))el.classList.add('hasw');
+    if(raceDates.includes(dateStr))el.classList.add('race');
+    el.textContent=i;
+    el.style.cursor='pointer';
+    const capturedDate=new Date(today.getFullYear(),today.getMonth(),i);
+    el.onclick=()=>{
+      document.querySelectorAll('.cd.selected').forEach(d=>d.classList.remove('selected'));
+      el.classList.add('selected');
+      showEventForDate(capturedDate);
+    };
+    g.appendChild(el);
   }
 }
 
@@ -666,10 +783,9 @@ if(window.location.protocol === 'file:') {
   }, 500);
 }
 loadFitness();
-loadActivities();
-buildCal();
 buildTSSChart();
 updateDays();
+loadEvents();
 </script>
 </body>
 </html>
