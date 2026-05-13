@@ -215,6 +215,23 @@ async def get_activities(days: int = 3):
             return data[-1]
         return data
 
+
+@app.get("/events")
+async def get_events(days_back: int = 3, days_forward: int = 60):
+    from datetime import datetime, timedelta
+    today = datetime.now()
+    oldest = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
+    newest = (today + timedelta(days=days_forward)).strftime("%Y-%m-%d")
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.get(
+            f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/events",
+            auth=("API_KEY", INTERVALS_KEY),
+            params={"oldest": oldest, "newest": newest}
+        )
+        if r.status_code != 200:
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        return r.json()
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     # 1. Cargar historial guardado
@@ -261,6 +278,26 @@ async def clear_chat_history():
     clear_history()
     return {"status": "Historial borrado"}
 
+
+@app.get("/events")
+async def get_events(days_back: int = 2, days_forward: int = 75):
+    today = datetime.now()
+    oldest = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
+    newest = (today + timedelta(days=days_forward)).strftime("%Y-%m-%d")
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.get(
+            f"{INTERVALS_URL}/athlete/{ATHLETE_ID}/events",
+            auth=("API_KEY", INTERVALS_KEY),
+            params={"oldest": oldest, "newest": newest}
+        )
+        if r.status_code != 200:
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        data = r.json()
+        # Always return array
+        if isinstance(data, dict):
+            return [data]
+        return data if data else []
+
 @app.get("/test-chat")
 async def test_chat():
     live = await get_live_context()
@@ -280,3 +317,5 @@ async def test_chat():
             }
         )
         return {"status_code": r.status_code, "live_context": live, "response": r.json()}
+
+
