@@ -160,6 +160,10 @@ async def get_live_context():
 
 # ─── ENDPOINTS ────────────────────────────────────────────
 
+class ChatRequest(BaseModel):
+    message: str
+    history: Optional[list] = []
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_app():
     try:
@@ -276,8 +280,3 @@ async def test_chat():
             }
         )
         return {"status_code": r.status_code, "live_context": live, "response": r.json()}
-
-class ChatRequest(BaseModel):
-    message: str
-    history: Optional[list] = []
-
