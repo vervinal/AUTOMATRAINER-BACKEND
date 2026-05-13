@@ -629,17 +629,19 @@ let selectedDate = null;
 
 async function loadEvents() {
   try {
-    const r = await fetch(`${BACKEND}/events?days_back=3&days_forward=60`);
-    if(!r.ok) return;
-    allEvents = await r.json();
-  } catch(e) { console.log('Events:', e.message); }
+    const r = await fetch(`${BACKEND}/events?days_back=5&days_forward=75`);
+    if(!r.ok){ console.log('Events HTTP:', r.status); buildCal(); showEventForDate(today); return; }
+    const data = await r.json();
+    allEvents = Array.isArray(data) ? data : (data && data.id ? [data] : []);
+    console.log('Events loaded:', allEvents.length, allEvents.map(e=>e.date));
+  } catch(e) { console.log('Events error:', e.message); allEvents = []; }
   buildCal();
   showEventForDate(today);
 }
 
 function getEventForDate(date) {
-  const dateStr = date.toISOString().split('T')[0];
-  return allEvents.find(ev => ev.start_date_local && ev.start_date_local.startsWith(dateStr));
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  return allEvents.find(ev => (ev.date && ev.date.startsWith(dateStr)) || (ev.start_date_local && ev.start_date_local.startsWith(dateStr)));
 }
 
 function formatDate(date) {
@@ -683,8 +685,8 @@ function showEventForDate(date) {
   const labelMap={WORKOUT:isToday?'Hoy':'Plan',RACE_A:'🏆 Carrera A',RACE_B:'🎯 Carrera B',RACE_C:'Carrera C',NOTE:'Nota'};
   if(badgeEl){badgeEl.className='badge '+(badgeMap[cat]||'br');badgeEl.textContent=labelMap[cat]||cat;}
   let body='';
-  const mins=ev.moving_time?Math.round(ev.moving_time/60):null;
-  const tss=ev.load||ev.training_load;
+  const mins=ev.moving_time_min || (ev.moving_time ? Math.round(ev.moving_time/60) : null);
+  const tss=ev.training_load || ev.load;
   if(mins||tss){
     body+=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">`;
     if(mins) body+=`<span style="font-size:11px;padding:3px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-family:var(--mono);color:var(--text2)">⏱ ${mins} min</span>`;
@@ -719,8 +721,9 @@ function buildCal(){
   const g=document.getElementById('cgrid');
   g.innerHTML='';
   ['L','M','X','J','V','S','D'].forEach(d=>{const el=document.createElement('div');el.className='cdn';el.textContent=d;g.appendChild(el);});
-  const eventDates=allEvents.map(ev=>ev.start_date_local?ev.start_date_local.substring(0,10):null).filter(Boolean);
-  const raceDates=allEvents.filter(ev=>ev.category&&ev.category.startsWith('RACE')).map(ev=>ev.start_date_local?ev.start_date_local.substring(0,10):null).filter(Boolean);
+  const getDateKey = ev => (ev.date || ev.start_date_local || '').substring(0,10);
+  const eventDates = allEvents.map(getDateKey).filter(Boolean);
+  const raceDates = allEvents.filter(ev=>ev.category&&ev.category.startsWith('RACE')).map(getDateKey).filter(Boolean);
   const firstDay=new Date(today.getFullYear(),today.getMonth(),1).getDay();
   const offset=firstDay===0?6:firstDay-1;
   for(let blank=0;blank<offset;blank++){const el=document.createElement('div');g.appendChild(el);}
