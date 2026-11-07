@@ -297,25 +297,3 @@ async def get_events(days_back: int = 2, days_forward: int = 75):
         if isinstance(data, dict):
             return [data]
         return data if data else []
-
-@app.get("/test-chat")
-async def test_chat():
-    live = await get_live_context()
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": ANTHROPIC_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json"
-            },
-            json={
-                "model": "claude-sonnet-4-6",
-                "max_tokens": 100,
-                "messages": [{"role": "user", "content": "Di hola y dime mi CTL actual"}],
-                "system": BASE_SYSTEM + live
-            }
-        )
-        return {"status_code": r.status_code, "live_context": live, "response": r.json()}
-
-
